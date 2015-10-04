@@ -30,7 +30,7 @@ class TestAdsAws(unittest.TestCase):
 
         running_ec2 = get_ec2_running()
 
-        self.assertItemsEqual(
+        self.assertDictEqual(
             expected_ec2,
             running_ec2,
             msg="Messages are not equal, {} != {}".format(
