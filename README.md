@@ -1,0 +1,1 @@
+# ErrBot ADSAWS Plugin
