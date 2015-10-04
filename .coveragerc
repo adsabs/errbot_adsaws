@@ -6,8 +6,7 @@ omit =
     */site-packages/ordereddict.py
     */site-packages/nose/*
     */unittest2/*
-    *mc/templates/docker/etc/adsws/common.py.monkeypatch
-    *mc/templates/docker/etc/gunicorn/gunicorn.conf.py
+    */virtualenv/*
 
 [report]
 exclude_lines =
