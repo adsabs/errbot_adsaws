@@ -11,13 +11,14 @@ class AdsAws(BotPlugin):
     ADS AWS commands
     """
     @botcmd
-    def aws(self, msg):
+    def aws(self, msg, args):
         """
         Get info on the ec2 instances
         :param msg: string
         :return: the corresponding info
         """
-        help = ''
+        help = '**ADS AWS Commands**\n'
+        help += '> *!aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
         return help
 
     @botcmd
@@ -27,7 +28,13 @@ class AdsAws(BotPlugin):
         :param args: arguments passed
         Return the ec2 info for running instances
         """
-        return get_ec2_running()
+        info = get_ec2_running()
+
+        return_msg = '**ADS AWS EC2 Instances**\n'
+        for instance in info:
+            return_msg += '> {} is *{}*\n'.format(instance['tag'], instance['status'])
+
+        return return_msg
 
 def get_ec2_running():
     """
@@ -52,4 +59,4 @@ def get_ec2_running():
 if __name__ == '__main__':
     response = get_ec2_running()
 
-    print response
+    print(response)
