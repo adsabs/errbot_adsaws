@@ -53,4 +53,4 @@ class TestAdsAws(unittest.TestCase):
 
         self.assertIsInstance(ip_ec2, list)
         for d in ip_ec2:
-            self.assertIn('PrivateIpAddress', d)
+            self.assertTrue('PrivateIpAddress' in d or 'PublicIpAddress' in d)
