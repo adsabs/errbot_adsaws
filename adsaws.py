@@ -18,7 +18,8 @@ class AdsAws(BotPlugin):
         :return: the corresponding info
         """
         help = '**ADS AWS Commands**\n'
-        help += '> *!aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
+        help += '>> *!aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
+        help += '>> *!aws ec2get*: get the property of an ADS AWS EC2 instance\n'
         return help
 
     @botcmd
@@ -32,7 +33,7 @@ class AdsAws(BotPlugin):
 
         return_msg = '**ADS AWS EC2 Instances**\n'
         for instance in info:
-            return_msg += '> {} is *{}*\n'.format(instance['tag'], instance['status'])
+            return_msg += '>> {} is *{}*\n'.format(instance['tag'], instance['status'])
 
         return return_msg
 
@@ -49,9 +50,9 @@ class AdsAws(BotPlugin):
 
         values = get_ec2_value(*args)
 
-        return_msg = '**ADS AWS EC2 Instance**\n'
+        return_msg = '**{}**\n'.format(args[0])
         for value in values:
-            return_msg += '> {}: {}'.format(list(value.keys())[0], list(value.values()))
+            return_msg += '>> {}: {}\n'.format(list(value.keys())[0], list(value.values()))
 
         return return_msg
 
