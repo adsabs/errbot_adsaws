@@ -36,6 +36,24 @@ class AdsAws(BotPlugin):
 
         return return_msg
 
+    @botcmd
+    def aws_ec2get(self, msg, args):
+        """
+        :param msg: msg sent
+        :param args: arguments passed
+        """
+
+        if len(args) !=2:
+            return 'Malformed request: !aws ec2get <instance> <property>'
+
+        values = get_ec2_value(*args)
+
+        return_msg = '**ADS AWS EC2 Instance**\n'
+        for value in values:
+            return_msg += '> {}: {}'.format(value.keys()[0], value.items())
+
+        return return_msg
+
 def get_ec2_running():
     """
     Get the tag and status for all of the EC2 instances
@@ -56,7 +74,49 @@ def get_ec2_running():
 
     return ec2_output
 
+def get_ec2_value(ec2_tag, ec2_value):
+    """
+    Get the IP (and other info) of a specific EC2 instance
+    :param ec2_tag:
+    :type ec2_tag: basestring
+
+    :param ec2_value: value wanted, eg., ip
+    :type ec2_value: basestring
+    """
+
+    synonym_list = {
+        'ip': ['PublicIpAddress', 'PrivateIpAddress'],
+        'publicipaddress': ['PublicIpAddress'],
+        'privateipaddress': ['PrivateIpAddress']
+    }
+
+    ec2 = get_boto3_session().client('ec2')
+    reservation = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [ec2_tag]}])
+
+    values = []
+
+    if ec2_value.lower() in synonym_list:
+        keys = synonym_list[ec2_value.lower()]
+    else:
+        keys = [ec2_value]
+
+    for key in synonym_list[ec2_value.lower()]:
+
+        out_dict = {key: []}
+
+        for instances in reservation['Reservations']:
+            for instance in instances['Instances']:
+                try:
+                    out_dict[key].append(instance[key])
+                except:
+                    out_dict[key].append('NA')
+
+        values.append(out_dict)
+
+    return values   
+
+
 if __name__ == '__main__':
-    response = get_ec2_running()
+    response = get_ec2_value('NAT', 'ip')
 
     print(response)
