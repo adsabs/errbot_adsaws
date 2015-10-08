@@ -43,14 +43,15 @@ class AdsAws(BotPlugin):
         :param args: arguments passed
         """
 
-        if len(args) !=2:
-            return 'Malformed request: !aws ec2get <instance> <property>'
+        args = args.split(' ')
+        if len(args) != 2:
+            return 'Malformed request: !aws ec2get <instance> <property> {}'.format(args)
 
         values = get_ec2_value(*args)
 
         return_msg = '**ADS AWS EC2 Instance**\n'
         for value in values:
-            return_msg += '> {}: {}'.format(value.keys()[0], value.items())
+            return_msg += '> {}: {}'.format(list(value.keys())[0], value.items())
 
         return return_msg
 
