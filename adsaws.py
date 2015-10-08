@@ -51,7 +51,7 @@ class AdsAws(BotPlugin):
 
         return_msg = '**ADS AWS EC2 Instance**\n'
         for value in values:
-            return_msg += '> {}: {}'.format(list(value.keys())[0], value.items())
+            return_msg += '> {}: {}'.format(list(value.keys())[0], list(value.values()))
 
         return return_msg
 
