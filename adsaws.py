@@ -52,7 +52,7 @@ class AdsAws(BotPlugin):
 
         return_msg = '**{}**\n'.format(args[0])
         for value in values:
-            return_msg += '>> {}: {}\n'.format(list(value.keys())[0], list(value.values()))
+            return_msg += '>> {}: {}\n'.format(list(value.keys())[0], list(value.values())[0])
 
         return return_msg
 
