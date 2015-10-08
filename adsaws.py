@@ -113,7 +113,7 @@ def get_ec2_value(ec2_tag, ec2_value):
 
         values.append(out_dict)
 
-    return values   
+    return values
 
 
 if __name__ == '__main__':

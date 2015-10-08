@@ -52,4 +52,5 @@ class TestAdsAws(unittest.TestCase):
         ip_ec2 = get_ec2_value('test1', 'ip')
 
         self.assertIsInstance(ip_ec2, list)
-        self.assertIn('PrivateIpAddress', [i.keys()[0] for i in ip_ec2])
+        for d in ip_ec2:
+            self.assertIn('PrivateIpAddress', d)
