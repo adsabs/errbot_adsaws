@@ -20,6 +20,9 @@ class AdsAws(BotPlugin):
         help = '**ADS AWS Commands**\n'
         help += '> *!aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
         help += '> *!aws ec2get*: get the property of an ADS AWS EC2 instance\n'
+        help += '> *!aws ecsclusters*: get a list of ECS clusters with their ARN\n'
+        help += '> *!aws ecsclusterinfo*: get a list of properties for a given ECS cluster\n'
+        help += '> *!aws ecsclusterinfo*: get status info for a given ECS cluster\n'
         return help
 
     @botcmd
@@ -54,6 +57,62 @@ class AdsAws(BotPlugin):
         for value in values:
             return_msg += '> {}: {}\n'.format(list(value.keys())[0], list(value.values())[0])
 
+        return return_msg
+
+    @botcmd
+    def aws_ecsclusters(self):
+        """
+        Return the ARNs for the ECS clusters
+        """
+        cluster_info = get_ecs_info()
+        return_msg = '**ADS AWS ECS Clusters**\n'
+        for entry in cluster_info.get('clusterArns'):
+            return_msg += '> {}: {}\n'.format(entry.split('/')[1], entry)
+        return return_msg
+
+    @botcmd
+    def aws_ecsclusterinfo(self, msg, args):
+        """
+        :param msg: msg sent
+        :param args: arguments passed
+        Return properties for a given ECS cluster
+        """
+        args = args.split(' ')
+        if len(args) != 1:
+            return 'Malformed request: !aws ecsclusterinfo <cluster name> {}'.format(args)
+        cluster_info = get_ecs_details(*args)
+        return_msg = '**{}**\n'.format(args[0])
+        for entry in cluster_info.get('clusters'):
+            if entry['clusterName'] != args[0]:
+                continue
+            return_msg += '>Status: {}\n'.format(entry['status'])
+            return_msg += '># Registered Container Instances: {}\n'.format(entry['registeredContainerInstancesCount'])
+            return_msg += '># running Tasks: {}\n'.format(entry['runningTasksCount'])
+            return_msg += '># pending Tasks: {}\n'.format(entry['pendingTasksCount'])
+            return_msg += '># active Servies: {}\n'.format(entry['activeServicesCount'])
+            
+        return return_msg
+
+    @botcmd
+    def aws_ecsclusterstatus(self, msg, args):
+        """
+        :param msg: msg sent
+        :param args: arguments passed
+        Return properties for a given ECS clusters
+        """
+        args = args.split(' ')
+        if len(args) != 1:
+            return 'Malformed request: !aws ecsclusterinfo <cluster name> {}'.format(args)
+        container_info = get_ecs_containers(*args)
+        return_msg = '**Cluster Container info for: {}**\n'.format(args[0])
+        for entry in container_info.get('containerInstances'):
+            return_msg += '>Container: {}\n'.format(entry['containerInstanceArn'])
+            return_msg += '>ec2InstanceId: {}\n'.format(entry['ec2InstanceId'])
+            return_msg += '>Container status: {}\n'.format(entry['status'])
+            return_msg += '>Docker version: {}\n'.format(entry['versionInfo']['dockerVersion'])
+            return_msg += '>Agent version: {}\n'.format(entry['versionInfo']['agentVersion'])
+            return_msg += '>Agent connected: {}\n'.format(entry['agentConnected'])
+            return_msg += '>+++++++++++++++++++++++++++++++++++++++++++++\n'
         return return_msg
 
 def get_ec2_running():
@@ -117,6 +176,22 @@ def get_ec2_value(ec2_tag, ec2_value):
 
     return values
 
+def get_ecs_info():
+    client = get_boto3_session().client('ecs')
+    result = client.list_clusters()
+    return result
+
+def get_ecs_details(name):
+    client = get_boto3_session().client('ecs')
+    result = client.describe_clusters(clusters=[name])
+    return result
+
+def get_ecs_containers(name):
+    client = get_boto3_session().client('ecs')
+    result = client.list_container_instances(cluster=name)
+    containers = result.get('containerInstanceArns',[])
+    container_info = client.describe_container_instances(cluster=name, containerInstances=containers)
+    return container_info
 
 if __name__ == '__main__':
     response = get_ec2_value('NAT', 'ip')
