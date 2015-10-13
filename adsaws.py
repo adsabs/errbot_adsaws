@@ -21,6 +21,8 @@ class AdsAws(BotPlugin):
         help += '> *!aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
         help += '> *!aws ec2get*: get the property of an ADS AWS EC2 instance\n'
         help += '> *!aws ecsclusters*: get a list of ECS clusters with their ARN\n'
+        help += '> *!aws ecsclusterinfo*: get a list of properties for a given ECS cluster\n'
+        help += '> *!aws ecsclusterinfo*: get status info for a given ECS cluster\n'
         return help
 
     @botcmd
@@ -73,7 +75,7 @@ class AdsAws(BotPlugin):
         """
         :param msg: msg sent
         :param args: arguments passed
-        Return properties for a given ECS clusters
+        Return properties for a given ECS cluster
         """
         args = args.split(' ')
         if len(args) != 1:
