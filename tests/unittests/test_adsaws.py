@@ -98,7 +98,7 @@ class TestAdsAws(unittest.TestCase):
         mock_session.return_value.client.return_value.describe_clusters.return_value = mock_data
         foo = AdsAws()
         return_msg = foo.aws_ecsclusterinfo('ecsclusterinfo','staging')
-        expected   = '**staging**\n>Status: ACTIVE\n># Registered Container Instances: 3\n># running Tasks: 11\n># pending Tasks: 0\n># active Servies: 11\n'
+        expected   = '**staging**\n>Status: ACTIVE\n>Number Registered Container Instances: 3\n>Number Running Tasks: 11\n>Number Pending Tasks: 0\n>Number Active Servies: 11\n'
         self.assertEqual(return_msg, expected)
 
     @patch('adsaws.get_boto3_session')

@@ -18,11 +18,11 @@ class AdsAws(BotPlugin):
         :return: the corresponding info
         """
         help = '**ADS AWS Commands**\n'
-        help += '> *!aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
-        help += '> *!aws ec2get*: get the property of an ADS AWS EC2 instance\n'
-        help += '> *!aws ecsclusters*: get a list of ECS clusters with their ARN\n'
-        help += '> *!aws ecsclusterinfo*: get a list of properties for a given ECS cluster\n'
-        help += '> *!aws ecsclusterinfo*: get status info for a given ECS cluster\n'
+        help += '> !aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
+        help += '> !aws ec2get*: get the property of an ADS AWS EC2 instance\n'
+        help += '> !aws ecsclusters*: get a list of ECS clusters with their ARN\n'
+        help += '> !aws ecsclusterinfo*: get a list of properties for a given ECS cluster\n'
+        help += '> !aws ecsclusterinfo*: get status info for a given ECS cluster\n'
         return help
 
     @botcmd
@@ -60,7 +60,7 @@ class AdsAws(BotPlugin):
         return return_msg
 
     @botcmd
-    def aws_ecsclusters(self):
+    def aws_ecsclusters(self, msg, args):
         """
         Return the ARNs for the ECS clusters
         """
@@ -86,10 +86,10 @@ class AdsAws(BotPlugin):
             if entry['clusterName'] != args[0]:
                 continue
             return_msg += '>Status: {}\n'.format(entry['status'])
-            return_msg += '># Registered Container Instances: {}\n'.format(entry['registeredContainerInstancesCount'])
-            return_msg += '># running Tasks: {}\n'.format(entry['runningTasksCount'])
-            return_msg += '># pending Tasks: {}\n'.format(entry['pendingTasksCount'])
-            return_msg += '># active Servies: {}\n'.format(entry['activeServicesCount'])
+            return_msg += '>Number Registered Container Instances: {}\n'.format(entry['registeredContainerInstancesCount'])
+            return_msg += '>Number Running Tasks: {}\n'.format(entry['runningTasksCount'])
+            return_msg += '>Number Pending Tasks: {}\n'.format(entry['pendingTasksCount'])
+            return_msg += '>Number Active Servies: {}\n'.format(entry['activeServicesCount'])
             
         return return_msg
 
