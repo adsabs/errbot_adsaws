@@ -2,7 +2,7 @@
 """
 ADS AWS functions that collect the relevant information requested by the user
 """
-
+import inspect
 from core import get_boto3_session
 from errbot import BotPlugin, botcmd, arg_botcmd
 
@@ -10,39 +10,33 @@ class AdsAws(BotPlugin):
     """
     ADS AWS commands
     """
-    @botcmd
+    @botcmd(template="help")
     def aws(self, msg, args):
         """
-        Get info on the ec2 instances
+        Get list of available bot commands
         :param msg: string
         :return: the corresponding info
         """
-        help = '**ADS AWS Commands**\n'
-        help += '> !aws ec2info*: get the status of all the ADS AWS EC2 instances\n'
-        help += '> !aws ec2get*: get the property of an ADS AWS EC2 instance\n'
-        help += '> !aws ecsclusters*: get a list of ECS clusters with their ARN\n'
-        help += '> !aws ecsclusterinfo*: get a list of properties for a given ECS cluster\n'
-        help += '> !aws ecsclusterinfo*: get status info for a given ECS cluster\n'
-        return help
 
-    @botcmd
+        commands = list(methodsWithDecorator(Foo, 'deco'))
+
+        return {'commands':commands}
+
+    @botcmd(template="ec2info")
     def aws_ec2info(self, msg, args):
         """
+        Get the status of all the ADS AWS EC2 instances
         :param msg: msg sent
         :param args: arguments passed
-        Return the ec2 info for running instances
         """
         info = get_ec2_running()
 
-        return_msg = '**ADS AWS EC2 Instances**\n'
-        for instance in info:
-            return_msg += '> {} is *{}*\n'.format(instance['tag'], instance['status'])
+        return {'ec2info':info}
 
-        return return_msg
-
-    @botcmd
+    @botcmd(template="ec2get")
     def aws_ec2get(self, msg, args):
         """
+        Get the property of an ADS AWS EC2 instance
         :param msg: msg sent
         :param args: arguments passed
         """
@@ -53,26 +47,28 @@ class AdsAws(BotPlugin):
 
         values = get_ec2_value(*args)
 
-        return_msg = '**{}**\n'.format(args[0])
+        return_msg['title'] = '**{}**\n'.format(args[0])
+        data = []
         for value in values:
-            return_msg += '> {}: {}\n'.format(list(value.keys())[0], list(value.values())[0])
+            data.append({'key': list(value.keys())[0], 'value': list(value.values())[0]})
 
-        return return_msg
+        return {'title': args[0], 'data': data}
 
-    @botcmd
+    @botcmd(template="ecsclusters")
     def aws_ecsclusters(self, msg, args):
         """
-        Return the ARNs for the ECS clusters
+        Get a list of ECS clusters with their ARN
         """
         cluster_info = get_ecs_info()
-        return_msg = '**ADS AWS ECS Clusters**\n'
+        data = []
         for entry in cluster_info.get('clusterArns'):
-            return_msg += '> {}: {}\n'.format(entry.split('/')[1], entry)
-        return return_msg
+            data.append({'name': entry.split('/')[1], 'ARN':entry})
+        return {'data': data}
 
-    @botcmd
+    @botcmd(template="ecsclusterinfo")
     def aws_ecsclusterinfo(self, msg, args):
         """
+        Get a list of properties for a given ECS cluster
         :param msg: msg sent
         :param args: arguments passed
         Return properties for a given ECS cluster
@@ -81,21 +77,23 @@ class AdsAws(BotPlugin):
         if len(args) != 1:
             return 'Malformed request: !aws ecsclusterinfo <cluster name> {}'.format(args)
         cluster_info = get_ecs_details(*args)
-        return_msg = '**{}**\n'.format(args[0])
+        data = []
         for entry in cluster_info.get('clusters'):
             if entry['clusterName'] != args[0]:
                 continue
-            return_msg += '>Status: {}\n'.format(entry['status'])
-            return_msg += '>Number Registered Container Instances: {}\n'.format(entry['registeredContainerInstancesCount'])
-            return_msg += '>Number Running Tasks: {}\n'.format(entry['runningTasksCount'])
-            return_msg += '>Number Pending Tasks: {}\n'.format(entry['pendingTasksCount'])
-            return_msg += '>Number Active Servies: {}\n'.format(entry['activeServicesCount'])
+            data.append({'status': entry['status'],
+                         'instance_num': entry['registeredContainerInstancesCount'],
+                         'running_num': entry['runningTasksCount'],
+                         'pending_num': entry['pendingTasksCount'],
+                         'active_num': entry['activeServicesCount']
+                     })
             
-        return return_msg
+        return {'cluster': args[0], 'data': data}
 
-    @botcmd
+    @botcmd(template="ecsclusterstatus")
     def aws_ecsclusterstatus(self, msg, args):
         """
+        Get status info for a given ECS cluster
         :param msg: msg sent
         :param args: arguments passed
         Return properties for a given ECS clusters
@@ -105,15 +103,16 @@ class AdsAws(BotPlugin):
             return 'Malformed request: !aws ecsclusterinfo <cluster name> {}'.format(args)
         container_info = get_ecs_containers(*args)
         return_msg = '**Cluster Container info for: {}**\n'.format(args[0])
+        data = []
         for entry in container_info.get('containerInstances'):
-            return_msg += '>Container: {}\n'.format(entry['containerInstanceArn'])
-            return_msg += '>ec2InstanceId: {}\n'.format(entry['ec2InstanceId'])
-            return_msg += '>Container status: {}\n'.format(entry['status'])
-            return_msg += '>Docker version: {}\n'.format(entry['versionInfo']['dockerVersion'])
-            return_msg += '>Agent version: {}\n'.format(entry['versionInfo']['agentVersion'])
-            return_msg += '>Agent connected: {}\n'.format(entry['agentConnected'])
-            return_msg += '>+++++++++++++++++++++++++++++++++++++++++++++\n'
-        return return_msg
+            data.append({'container': entry['containerInstanceArn'],
+                         'ec2InstanceId': entry['ec2InstanceId'],
+                         'status': entry['status'],
+                         'docker_version': entry['versionInfo']['dockerVersion'],
+                         'agent_version': entry['versionInfo']['agentVersion'],
+                         'agent_connected': entry['agentConnected']
+                     })
+        return {'cluster': args[0], 'data': data}
 
 def get_ec2_running():
     """
@@ -192,6 +191,16 @@ def get_ecs_containers(name):
     containers = result.get('containerInstanceArns',[])
     container_info = client.describe_container_instances(cluster=name, containerInstances=containers)
     return container_info
+
+def methodsWithDecorator(cls, decoratorName):
+    sourcelines = inspect.getsourcelines(cls)[0]
+    for i,line in enumerate(sourcelines):
+        line = line.strip()
+        if line.split('(')[0].strip() == '@'+decoratorName: # leaving a bit out
+            nextLine = sourcelines[i+1]
+            name = nextLine.split('def')[1].split('(')[0].strip()
+            hlp  = inspect.getdoc(eval('Foo.%s'%name)).split('\n')[0]
+            yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
     response = get_ec2_value('NAT', 'ip')

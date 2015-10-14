@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body %}
+<p style='font-weight:bold'>{{title}}:</p>
+    <table>
+    {% for item in data %}
+	    <tr><td>{{ item.key }}</td><td>{{ item.value }}</td></tr>
+	{% endfor %}
+    </table>
+{% endblock %}
