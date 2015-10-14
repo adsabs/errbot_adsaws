@@ -1,4 +1,4 @@
 ### {{title}}:
 {% for item in data %}
-  * {{ item.key }}: {{ item.value }}
+**{{ item.key }}**: {{ item.value }}
 {% endfor %}
