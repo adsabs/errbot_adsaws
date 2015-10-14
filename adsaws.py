@@ -18,7 +18,7 @@ class AdsAws(BotPlugin):
         :return: the corresponding info
         """
 
-        commands = list(methodsWithDecorator(Foo, 'deco'))
+        commands = list(methodsWithDecorator(AdsAws, 'botcmd'))
 
         return {'commands':commands}
 
@@ -199,7 +199,7 @@ def methodsWithDecorator(cls, decoratorName):
         if line.split('(')[0].strip() == '@'+decoratorName: # leaving a bit out
             nextLine = sourcelines[i+1]
             name = nextLine.split('def')[1].split('(')[0].strip()
-            hlp  = inspect.getdoc(eval('Foo.%s'%name)).split('\n')[0]
+            hlp  = inspect.getdoc(eval('AdsAws.%s'%name)).split('\n')[0]
             yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
