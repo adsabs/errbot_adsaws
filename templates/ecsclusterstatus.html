@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block body %}
+<p style='font-weight:bold'>Cluster Container info for: {{cluster}}</p>
+    <table>
+    {% for item in data %}
+	    <tr><td>Container</td><td>{{item.container}}</td></tr>
+		<tr><td>ec2InstanceId</td><td>{{item.ec2InstanceId}}</td></tr>
+		<tr><td>Container status</td><td>{{item.status}}</td></tr>
+		<tr><td>Docker version</td><td>{{item.docker_version}}</td></tr>
+		<tr><td>Agent version</td><td>{{item.agent_num}}</td></tr>
+		<tr><td>Agent connected</td><td>{{item.agent_connected}}</td></tr>
+		<tr><td></td><td></td></tr>
+	{% endfor %}
+    </table>
+{% endblock %}

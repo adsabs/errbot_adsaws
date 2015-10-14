@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block body %}
+<p style='font-weight:bold'>ADS AWS ECS Clusters:</p>
+    <table>
+    {% for item in data %}
+	    <tr><td>{{ item.name }}</td><td>{{ item.ARN }}</td></tr>
+	{% endfor %}
+    </table>
+{% endblock %}

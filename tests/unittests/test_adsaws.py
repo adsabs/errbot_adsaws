@@ -65,12 +65,12 @@ class TestAdsAws(unittest.TestCase):
         self.assertTrue('clusterArns' in info)
 
     @patch('adsaws.get_boto3_session')
-    def test_aws_ecsclusters(self, mock_session):
+    def test_get_aws_ecsclusters(self, mock_session):
         mock_data = {'clusterArns': ['cluster/production','cluster/staging'],'ResponseMetadata': {}}
         mock_session.return_value.client.return_value.list_clusters.return_value = mock_data
         foo = AdsAws()
-        return_msg = foo.aws_ecsclusters()
-        expected   = '**ADS AWS ECS Clusters**\n> production: cluster/production\n> staging: cluster/staging\n'
+        return_msg = foo.aws_ecsclusters('ecsclusters','something')
+        expected   = {'data': [{'name': 'production', 'ARN': 'cluster/production'}, {'name': 'staging', 'ARN': 'cluster/staging'}]}
         self.assertEqual(return_msg, expected)
 
     @patch('adsaws.get_boto3_session')
@@ -98,7 +98,7 @@ class TestAdsAws(unittest.TestCase):
         mock_session.return_value.client.return_value.describe_clusters.return_value = mock_data
         foo = AdsAws()
         return_msg = foo.aws_ecsclusterinfo('ecsclusterinfo','staging')
-        expected   = '**staging**\n>Status: ACTIVE\n>Number Registered Container Instances: 3\n>Number Running Tasks: 11\n>Number Pending Tasks: 0\n>Number Active Servies: 11\n'
+        expected   = {'cluster': 'staging', 'data': [{'status': u'ACTIVE', 'instance_num': 3, 'running_num': 11, 'active_num': 11, 'pending_num': 0}]}
         self.assertEqual(return_msg, expected)
 
     @patch('adsaws.get_boto3_session')
@@ -148,5 +148,5 @@ class TestAdsAws(unittest.TestCase):
         mock_session.return_value.client.return_value.describe_container_instances.return_value = mock_data
         foo = AdsAws()
         return_msg = foo.aws_ecsclusterstatus('ecsclusterstatus', 'staging')
-        expected = '**Cluster Container info for: staging**\n>Container: ARN\n>ec2InstanceId: i-3889f693\n>Container status: ACTIVE\n>Docker version: DockerVersion: 1.6.2\n>Agent version: 1.3.0\n>Agent connected: True\n>+++++++++++++++++++++++++++++++++++++++++++++\n'
+        expected = {'cluster': 'staging', 'data': [{'status': u'ACTIVE', 'container': u'ARN', 'ec2InstanceId': u'i-3889f693', 'docker_version': u'DockerVersion: 1.6.2', 'agent_connected': True, 'agent_version': u'1.3.0'}]}
         self.assertEqual(return_msg, expected)

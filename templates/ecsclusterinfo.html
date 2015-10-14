@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<p style='font-weight:bold'>Information for cluster "{{cluster}}":</p>
+    <table>
+    {% for item in data %}
+	    <tr><td>Status</td><td>{{item.status}}</td></tr>
+		<tr><td># Registered Container Instances</td><td>{{item.instance_num}}</td></tr>
+		<tr><td># Running Tasks</td><td>{{item.running_num}}</td></tr>
+		<tr><td># Pending Tasks</td><td>{{item.pending_num}}</td></tr>
+		<tr><td># Active Tasks</td><td>{{item.active_num}}</td></tr>
+	{% endfor %}
+    </table>
+{% endblock %}
