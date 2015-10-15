@@ -97,7 +97,7 @@ class TestAdsAws(unittest.TestCase):
                                     'ResponseMetadata': {}}
         mock_session.return_value.client.return_value.describe_clusters.return_value = mock_data
         foo = AdsAws()
-        return_msg = foo.aws_ecsclusterinfo('ecs','staging', test=True)
+        return_msg = foo.aws_ecsclusterinfo('ecs','staging')
         expected   = {'cluster': 'staging', 'data': [{'status': u'ACTIVE', 'instance_num': 3, 'running_num': 11, 'active_num': 11, 'pending_num': 0}]}
         self.assertEqual(return_msg, expected)
 
@@ -147,6 +147,6 @@ class TestAdsAws(unittest.TestCase):
                                                                 'ResponseMetadata': {}}
         mock_session.return_value.client.return_value.describe_container_instances.return_value = mock_data
         foo = AdsAws()
-        return_msg = foo.aws_ecsclusterstatus('ecs', 'staging', test=True)
+        return_msg = foo.aws_ecsclusterstatus('ecs', 'staging')
         expected = {'cluster': 'staging', 'data': [{'status': u'ACTIVE', 'container': u'ARN', 'ec2InstanceId': u'i-3889f693', 'docker_version': u'DockerVersion: 1.6.2', 'agent_connected': True, 'agent_version': u'1.3.0'}]}
         self.assertEqual(return_msg, expected)
