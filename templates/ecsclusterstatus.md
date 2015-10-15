@@ -1,3 +1,6 @@
+{% if error is defined %}
+**{{error}}**
+{% else %}
 #### Cluster Container info for: {{cluster}}
 {% for item in data %}
 **Container**: {{item.container}}
@@ -14,3 +17,4 @@
 
   -----
 {% endfor %}
+{% endif %}

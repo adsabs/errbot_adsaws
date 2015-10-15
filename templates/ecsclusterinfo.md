@@ -1,3 +1,6 @@
+{% if error is defined %}
+**{{error}}**
+{% else %}
 #### Information for cluster "{{cluster}}":
 {% for item in data %}
 **Status**: {{item.status}}
@@ -10,3 +13,4 @@
 
 **Number Active Tasks**: {{item.active_num}}
 {% endfor %}
+{% endif %}
