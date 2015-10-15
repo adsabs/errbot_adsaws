@@ -74,7 +74,7 @@ class AdsAws(BotPlugin):
         Return properties for a given ECS cluster
         """
         args = args.split(' ')
-        if len(args) != 1:
+        if len(args) != 2:
             err_msg = 'Malformed request: !aws ecsclusterinfo <cluster name>'
             return {'cluster': '', 'data': [], 'error':err_msg}
         cluster_info = get_ecs_details(*args)
@@ -100,7 +100,7 @@ class AdsAws(BotPlugin):
         Return properties for a given ECS clusters
         """
         args = args.split(' ')
-        if len(args) != 1:
+        if len(args) != 2:
             err_msg = 'Malformed request: !aws ecsclusterinfo <cluster name>'
             return {'cluster': '', 'data': [], 'error':err_msg}
 
