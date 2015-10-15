@@ -43,16 +43,16 @@ class AdsAws(BotPlugin):
 
         args = args.split(' ')
         if len(args) != 2:
-            return 'Malformed request: !aws ec2get <instance> <property> {}'.format(args)
+            err_msg = 'Malformed request: !aws ec2get <instance> <property> {}'.format(args)
+            return {'title': '', 'data': [], 'error':err_msg}
 
         values = get_ec2_value(*args)
 
-        return_msg['title'] = '**{}**\n'.format(args[0])
         data = []
         for value in values:
             data.append({'key': list(value.keys())[0], 'value': list(value.values())[0]})
 
-        return {'title': args[0], 'data': data}
+        return {'title': args[0], 'data': data, 'error':None}
 
     @botcmd(template="ecsclusters")
     def aws_ecsclusters(self, msg, args):
