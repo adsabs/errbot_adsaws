@@ -75,7 +75,8 @@ class AdsAws(BotPlugin):
         """
         args = args.split(' ')
         if len(args) != 1:
-            return 'Malformed request: !aws ecsclusterinfo <cluster name> {}'.format(args)
+            err_msg = 'Malformed request: !aws ecsclusterinfo <cluster name>'
+            return {'cluster': '', 'data': [], 'error':err_msg}
         cluster_info = get_ecs_details(*args)
         data = []
         for entry in cluster_info.get('clusters'):
@@ -100,7 +101,9 @@ class AdsAws(BotPlugin):
         """
         args = args.split(' ')
         if len(args) != 1:
-            return 'Malformed request: !aws ecsclusterinfo <cluster name> {}'.format(args)
+            err_msg = 'Malformed request: !aws ecsclusterinfo <cluster name>'
+            return {'cluster': '', 'data': [], 'error':err_msg}
+
         container_info = get_ecs_containers(*args)
         return_msg = '**Cluster Container info for: {}**\n'.format(args[0])
         data = []
