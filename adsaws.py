@@ -249,29 +249,6 @@ def methodsWithDecorator(cls, decoratorName):
             yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
-    name = 'staging'
-    client = get_boto3_session().client('ecs')
-    result = client.list_container_instances(cluster=name)
-    containers = result.get('containerInstanceArns',[])
-    services = {}
-    for container in containers:
-        cont_info = client.describe_container_instances(cluster=name, containerInstances=[container])
-        cont_id = cont_info.get('containerInstances',[])[0].get('ec2InstanceId','NA')
-        services[cont_id] = []
-        info = client.list_tasks(cluster=name, containerInstance=container)
-        tasks= info.get('taskArns',[])
-        for task in tasks:
-            task_info = client.describe_tasks(cluster=name, tasks=[task])
-            items = task_info.get('tasks',[])
-            data = {}
-            for item in items:
-                data['lastStatus'] = item.get('lastStatus','NA')
-                data['desiredStatus']= item.get('desiredStatus','NA')
-                data['service'] = item.get('containers','NA')[0].get('name','NA')
-                services[cont_id].append(data)
-    print services
-#    info = client.list_tasks(cluster='staging')
-#    tasks = info.get('taskArns')
-#    for task in tasks:
-#        info = client.describe_tasks(cluster='staging', tasks=[task])
-#        print info
+    response = get_ec2_value('NAT', 'ip')
+
+    print(response)
