@@ -9,7 +9,7 @@
 
 **ec2InstanceId**: {{item.ec2InstanceId}}
 
-**IP address**: {{item.ip_address}}
+**IP address**: {{item.private_ip}}
 
 **Container status**: {{item.status}}
 
@@ -19,7 +19,7 @@
 
 **Agent connected**: {{item.agent_connected}}
 
-**Services**: {{item.srv_str}}
+**Services**: {{item.services}}
 
   -----
 {% endfor %}
