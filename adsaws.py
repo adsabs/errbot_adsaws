@@ -106,15 +106,30 @@ class AdsAws(BotPlugin):
         except:
             err_msg = 'Malformed request: !aws ecsclusterstatus <cluster name>'
             return {'cluster': '', 'data': [], 'error':err_msg}
-        return_msg = '**Cluster Container info for: {}**\n'.format(args[0])
+        try:
+            services = get_ecs_services(*args)
+        except:
+            services = {}
         data = []
         for entry in container_info.get('containerInstances'):
+            id = entry['ec2InstanceId']
+            instance_services = services.get(id,[])
+            services_list = []
+            for srv in instance_services:
+                services_list.append("%s (%s)" % (srv.get('name'),srv.get('lastStatus')))
+            srv_str = ",".join(services_list)
+            info = get_ec2_info(id)
+            instance_type = info.get('Reservations')[0].get('Instances')[0].get('InstanceType')
+            ip_address = info.get('Reservations')[0].get('Instances')[0].get('PrivateIpAddress')
             data.append({'container': entry['containerInstanceArn'],
-                         'ec2InstanceId': entry['ec2InstanceId'],
+                         'ec2InstanceId': id,
                          'status': entry['status'],
                          'docker_version': entry['versionInfo']['dockerVersion'],
                          'agent_version': entry['versionInfo']['agentVersion'],
-                         'agent_connected': entry['agentConnected']
+                         'agent_connected': entry['agentConnected'],
+                         'instance_type': instance_type,
+                         'private_ip': ip_address,
+                         'services': srv_str
                      })
         return {'cluster': args[0], 'data': data}
 
@@ -179,6 +194,11 @@ def get_ec2_value(ec2_tag, ec2_value):
 
     return values
 
+def get_ec2_info(InstanceId):
+    client = get_boto3_session().client('ec2')
+    info = client.describe_instances(InstanceIds=[InstanceId])
+    return info
+
 def get_ecs_info():
     client = get_boto3_session().client('ecs')
     result = client.list_clusters()
@@ -196,6 +216,28 @@ def get_ecs_containers(name):
     container_info = client.describe_container_instances(cluster=name, containerInstances=containers)
     return container_info
 
+def get_ecs_services(name):
+    client = get_boto3_session().client('ecs')
+    result = client.list_container_instances(cluster=name)
+    containers = result.get('containerInstanceArns',[])
+    services = {}
+    for container in containers:
+        cont_info = client.describe_container_instances(cluster=name, containerInstances=[container])
+        cont_id = cont_info.get('containerInstances',[])[0].get('ec2InstanceId','NA')
+        services[cont_id] = []
+        info = client.list_tasks(cluster=name, containerInstance=container)
+        tasks= info.get('taskArns',[])
+        for task in tasks:
+            task_info = client.describe_tasks(cluster=name, tasks=[task])
+            items = task_info.get('tasks',[])
+            data = {}
+            for item in items:
+                data['lastStatus'] = item.get('lastStatus','NA')
+                data['desiredStatus']= item.get('desiredStatus','NA')
+                data['service'] = item.get('containers','NA')[0].get('name','NA')
+                services[cont_id].append(data)
+    return services
+
 def methodsWithDecorator(cls, decoratorName):
     sourcelines = inspect.getsourcelines(cls)[0]
     for i,line in enumerate(sourcelines):
@@ -207,6 +249,29 @@ def methodsWithDecorator(cls, decoratorName):
             yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
-    response = get_ec2_value('NAT', 'ip')
-
-    print(response)
+    name = 'staging'
+    client = get_boto3_session().client('ecs')
+    result = client.list_container_instances(cluster=name)
+    containers = result.get('containerInstanceArns',[])
+    services = {}
+    for container in containers:
+        cont_info = client.describe_container_instances(cluster=name, containerInstances=[container])
+        cont_id = cont_info.get('containerInstances',[])[0].get('ec2InstanceId','NA')
+        services[cont_id] = []
+        info = client.list_tasks(cluster=name, containerInstance=container)
+        tasks= info.get('taskArns',[])
+        for task in tasks:
+            task_info = client.describe_tasks(cluster=name, tasks=[task])
+            items = task_info.get('tasks',[])
+            data = {}
+            for item in items:
+                data['lastStatus'] = item.get('lastStatus','NA')
+                data['desiredStatus']= item.get('desiredStatus','NA')
+                data['service'] = item.get('containers','NA')[0].get('name','NA')
+                services[cont_id].append(data)
+    print services
+#    info = client.list_tasks(cluster='staging')
+#    tasks = info.get('taskArns')
+#    for task in tasks:
+#        info = client.describe_tasks(cluster='staging', tasks=[task])
+#        print info
