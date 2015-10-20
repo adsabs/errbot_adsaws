@@ -116,7 +116,7 @@ class AdsAws(BotPlugin):
             instance_services = services.get(id,[])
             services_list = []
             for srv in instance_services:
-                services_list.append("%s (%s)" % (srv.get('name'),srv.get('lastStatus')))
+                services_list.append("%s (%s)" % (srv.get('service'),srv.get('lastStatus')))
             srv_str = ",".join(services_list)
             info = get_ec2_info(id)
             instance_type = info.get('Reservations')[0].get('Instances')[0].get('InstanceType')
@@ -249,6 +249,6 @@ def methodsWithDecorator(cls, decoratorName):
             yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
-    response = get_ec2_value('NAT', 'ip')
+    response = get_ecs_services('staging')
 
     print(response)
