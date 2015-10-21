@@ -15,7 +15,7 @@
 
 **Docker version**: {{item.docker_version}}
 
-**Agent version**: {{item.agent_num}}
+**Agent version**: {{item.agent_version}}
 
 **Agent connected**: {{item.agent_connected}}
 
