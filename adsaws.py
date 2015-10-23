@@ -116,7 +116,7 @@ class AdsAws(BotPlugin):
             instance_services = services.get(id,[])
             services_list = []
             for srv in instance_services:
-                services_list.append("%s (%s)" % (srv.get('service'),srv.get('lastStatus')))
+                services_list.append("%s (%s, revision %s)" % (srv.get('service'),srv.get('lastStatus'), srv.get('revision')))
             srv_str = ",".join(services_list)
             info = get_ec2_info(id)
             instance_type = info.get('Reservations')[0].get('Instances')[0].get('InstanceType')
@@ -235,6 +235,7 @@ def get_ecs_services(name):
                 data['lastStatus'] = item.get('lastStatus','NA')
                 data['desiredStatus']= item.get('desiredStatus','NA')
                 data['service'] = item.get('containers','NA')[0].get('name','NA')
+                data['revision'] = item.get('taskDefinitionArn','NA').split(':')[-1]
                 services[cont_id].append(data)
     return services
 
