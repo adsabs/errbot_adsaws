@@ -1,2 +1,3 @@
 local_config.py
 *.pyc
+.DS_Store
