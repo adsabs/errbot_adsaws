@@ -1,6 +1,6 @@
 {% if error is defined %}
 **{{error}}**
-{% elif services_list if defined %}
+{% elif services_list is defined %}
 **Info available for**: {{services_list}}
 {% else %}
 #### Service: {{service}}
