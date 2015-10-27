@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block body %}
-<p style='font-weight:bold'>Available Bot Commands:</p>
-    <table>
-    {% for item in commands %}
-	    <tr><td>{{ item.command }}</td><td>{{ item.description }}</td></tr>
-	{% endfor %}
-    </table>
-{% endblock %}

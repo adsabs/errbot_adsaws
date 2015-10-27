@@ -3,8 +3,17 @@
 ADS AWS functions that collect the relevant information requested by the user
 """
 import inspect
+import itertools
+import requests
 from core import get_boto3_session
 from errbot import BotPlugin, botcmd, arg_botcmd
+
+requests.packages.urllib3.disable_warnings()
+
+API_URL = {
+    'staging':'http://ecs-staging-elb-2044121877.us-east-1.elb.amazonaws.com',
+    'production':'https://api.adsabs.harvard.edu'
+}
 
 class AdsAws(BotPlugin):
     """
@@ -133,6 +142,25 @@ class AdsAws(BotPlugin):
                      })
         return {'cluster': args[0], 'data': data}
 
+    @botcmd(template="ecsservicestatus")
+    def aws_ecs(self, msg, args, test=False):
+        """
+        Get status info for a given service running on ECS
+        :param msg: msg sent
+        :param args: arguments passed
+        """
+        args = args.split(' ')
+        try:
+            service_info = get_ecs_service_status(*args)
+        except:
+            err_msg = 'Malformed request: !aws ecs <service> or !aws ecs list'
+            return {'service': '', 'data': [], 'error':err_msg}
+        endpoints, base = get_endpoints('production')
+        if args[0].strip() == 'list':
+            return {'endpoints':",".join(endpoints)}
+        data = get_ecs_service_status(*args)
+        return {'service':args[0], 'data':data}
+
 def get_ec2_running():
     """
     Get the tag and status for all of the EC2 instances
@@ -239,6 +267,71 @@ def get_ecs_services(name):
                 services[cont_id].append(data)
     return services
 
+def get_ecs_service_status(service_name):
+    service_map = {
+        'search':'solr-service'
+    }
+    serv = service_map.get(service_name, service_name)
+    ec2_client = get_boto3_session().client('ec2')
+    client = get_boto3_session().client('ecs')
+    result = client.list_clusters()
+    cnames = [e.split('/')[1] for e in result.get('clusterArns')]
+    results = []
+    for name in cnames:
+        data = {}
+        data['cluster'] = name
+        data['service_info'] = {}
+        containers = client.list_container_instances(cluster=name).get('containerInstanceArns',[])
+        tasks = list(itertools.chain(*[client.list_tasks(cluster=name, containerInstance=c).get('taskArns',[]) for c in containers]))
+        try:
+            serv_tasks = [e for e in client.describe_tasks(cluster=name, tasks=tasks).get('tasks',[]) if serv in e.get('taskDefinitionArn','NA')]
+            testURL, httpStatus = get_http_status(name, service_name)
+        except:
+            serv_tasks = []
+            httpStatus = 'NA'
+            testURL = 'NA'
+        for item in serv_tasks:
+            item.pop("overrides", None)
+            ARN = item['containerInstanceArn']
+            cont_info = client.describe_container_instances(cluster=name, containerInstances=[ARN])
+            cont_id = cont_info.get('containerInstances',[])[0].get('ec2InstanceId','NA')
+            instance_info = get_ec2_info(cont_id)
+            interfaces = []
+            for R in instance_info['Reservations']:
+                for I in R['Instances']:
+                    interfaces.append("(%s, %s)" % (I.get('PrivateIpAddress',"NA"), I.get('InstanceType',"NA")))
+            try:
+                info = client.describe_task_definition(taskDefinition=item.get('taskDefinitionArn')).get('taskDefinition')
+            except:
+                info = {}
+            info['interfaces'] = ",".join(interfaces)
+            item['taskDefinition'] = info
+#            item['instanceInfo'] = instance_info
+#            item['interfaces'] = ",".join(interfaces)
+        data['service_info']['serviceTasks'] = serv_tasks
+        data['service_info']['testURL'] = testURL
+        data['service_info']['httpStatus'] = str(httpStatus)
+        results.append(data)
+    return results
+
+def get_http_status(cluster, service):
+    resp = requests.get("%s/resources"%API_URL[cluster])
+    base = resp.json()['adsws.api']['base']
+    tokenURL = "%s%s/accounts/bootstrap" % (API_URL[cluster], base)
+    resp = requests.get(tokenURL)
+    token = resp.json()['access_token']
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'Authorization':'Bearer %s' % token}
+    serviceURL = "%s%s/%s/resources" % (API_URL[cluster], base, service)
+    resp = requests.get(serviceURL, headers=headers)
+    return (resp.url, resp.status_code)
+
+def get_endpoints(cluster):
+    exclude = [u'status', u'oauth', u'protected', u'user', u'vault']
+    resp = requests.get("%s/resources"%API_URL[cluster])
+    endpoints = list(set([e.split('/')[1] for e in resp.json()['adsws.api']['endpoints']]))
+    endpoints = [e for e in endpoints if e not in exclude]
+    return endpoints
+
 def methodsWithDecorator(cls, decoratorName):
     sourcelines = inspect.getsourcelines(cls)[0]
     for i,line in enumerate(sourcelines):
@@ -250,6 +343,8 @@ def methodsWithDecorator(cls, decoratorName):
             yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
-    response = get_ecs_services('staging')
+    response = get_ecs_service_status('metrics')
 
     print(response)
+ 
+        
