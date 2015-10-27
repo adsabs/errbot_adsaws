@@ -4,3 +4,4 @@ boto3==1.1.4
 moto==0.4.14
 coveralls==1.0
 mock
+requests
