@@ -13,6 +13,8 @@ API_URL = {
     'production':'https://api.adsabs.harvard.edu'
 }
 
+SERVICES = ['metrics', 'graphics', 'recommender', 'orcid', 'biblib']
+
 class AdsAws(BotPlugin):
     """
     ADS AWS commands
@@ -153,9 +155,9 @@ class AdsAws(BotPlugin):
         except:
             err_msg = 'Malformed request: !aws ecs <service> or !aws ecs list'
             return {'service': '', 'data': [], 'error':err_msg}
-        endpoints, base = get_endpoints('production')
+
         if args[0].strip() == 'list':
-            return {'endpoints':",".join(endpoints)}
+            return {'services_list':",".join(SERVICES)}
         data = get_ecs_service_status(*args)
         return {'service':args[0], 'data':data}
 
