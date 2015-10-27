@@ -8,8 +8,6 @@ import requests
 from core import get_boto3_session
 from errbot import BotPlugin, botcmd, arg_botcmd
 
-requests.packages.urllib3.disable_warnings()
-
 API_URL = {
     'staging':'http://ecs-staging-elb-2044121877.us-east-1.elb.amazonaws.com',
     'production':'https://api.adsabs.harvard.edu'
