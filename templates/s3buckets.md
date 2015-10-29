@@ -3,9 +3,10 @@
 {% else %}
 #### {{title}}:
 {% for item in contents %}
-{{% if item.Name is defined %}}
+{% if item.Name is defined %}
 {{ item.Name }}
-{{% else %}}
+{% else %}
 {{ item.Key }}
+{% endif %}
 {% endfor %}
 {% endif %}
