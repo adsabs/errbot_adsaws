@@ -1,4 +1,11 @@
+{% if error is defined %}
+**{{error}}**
+{% else %}
 #### {{title}}:
 {% for item in contents %}
-{{ item }}
+{{% if item.Name is defined %}}
+{{ item.Name }}
+{{% else %}}
+{{ item.Key }}
 {% endfor %}
+{% endif %}
