@@ -172,10 +172,10 @@ class AdsAws(BotPlugin):
         try:
             if args[0].strip() == 'list':
                 buckets = get_s3_buckets()
-                return {'title':'Buckets on S3', 'items':buckets}
+                return {'title':'Buckets on S3', 'buckets':buckets}
             else:
                 contents = get_s3_bucket_contents(*args)
-                return {'title':'Contents of S3 bucket %s'%args[0],'items':contents}
+                return {'title':'Contents of S3 bucket %s'%args[0],'contents':contents}
         except:
             err_msg = 'Malformed request: !aws s3 <bucket name> or !aws s3 list'
             return {'service': '', 'data': [], 'error':err_msg}
@@ -354,12 +354,12 @@ def get_endpoints(cluster):
 def get_s3_buckets():
     s3 = get_boto3_session().client('s3')
     resp = s3.list_buckets()
-    return [b['Name'] for b in resp['Buckets']]
+    return resp['Buckets']
 
 def get_s3_bucket_contents(bucket):
     s3 = get_boto3_session().client('s3')
     resp = s3.list_objects(Bucket=bucket)
-    return [o['Key'] for o in resp['Contents']]
+    return resp['Contents']
 
 def methodsWithDecorator(cls, decoratorName):
     sourcelines = inspect.getsourcelines(cls)[0]
@@ -372,7 +372,7 @@ def methodsWithDecorator(cls, decoratorName):
             yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
-    response = get_s3_bucket_contents('adsabs-consul')
+    response = get_s3_bucket_contents('adsabs-consul-backups')
     print(response)
  
         
