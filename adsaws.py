@@ -172,7 +172,7 @@ class AdsAws(BotPlugin):
         try:
             if args[0].strip() == 'list':
                 buckets = get_s3_buckets()
-                return {'title':'Buckets on S3', 'buckets':buckets}
+                return {'title':'Buckets on S3', 'contents':buckets}
             else:
                 contents = get_s3_bucket_contents(*args)
                 return {'title':'Contents of S3 bucket %s'%args[0],'contents':contents}
