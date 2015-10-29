@@ -161,6 +161,25 @@ class AdsAws(BotPlugin):
         data = get_ecs_service_status(*args)
         return {'service':args[0], 'data':data}
 
+    @botcmd(template="s3buckets")
+    def s3_buckets(self, msg, args):
+        """
+        Get a list of S3 buckets or the contents of a given one
+        :param msg: msg sent
+        :param args: arguments passed
+        """
+        args = args.split(' ')
+        try:
+            if args[0].strip() == 'list':
+                buckets = get_s3_buckets()
+                return {'title':'Buckets on S3', 'items':buckets}
+            else:
+                contents = get_s3_bucket_contents(*args)
+                return {'title':'Contents of S3 bucket %s'%args[0],'items':contents}
+        except:
+            err_msg = 'Malformed request: !aws s3 <bucket name> or !aws s3 list'
+            return {'service': '', 'data': [], 'error':err_msg}
+
 def get_ec2_running():
     """
     Get the tag and status for all of the EC2 instances
@@ -332,6 +351,16 @@ def get_endpoints(cluster):
     endpoints = [e for e in endpoints if e not in exclude]
     return endpoints
 
+def get_s3_buckets():
+    s3 = get_boto3_session().client('s3')
+    resp = s3.list_buckets()
+    return [b['Name'] for b in resp['Buckets']]
+
+def get_s3_bucket_contents(bucket):
+    s3 = get_boto3_session().client('s3')
+    resp = s3.list_objects(Bucket=bucket)
+    return [o['Key'] for o in resp['Contents']]
+
 def methodsWithDecorator(cls, decoratorName):
     sourcelines = inspect.getsourcelines(cls)[0]
     for i,line in enumerate(sourcelines):
@@ -343,8 +372,7 @@ def methodsWithDecorator(cls, decoratorName):
             yield({'command':name,'description':hlp})
 
 if __name__ == '__main__':
-    response = get_ecs_service_status('metrics')
-
+    response = get_s3_bucket_contents('adsabs-consul')
     print(response)
  
         
