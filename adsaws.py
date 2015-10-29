@@ -162,7 +162,7 @@ class AdsAws(BotPlugin):
         return {'service':args[0], 'data':data}
 
     @botcmd(template="s3buckets")
-    def s3_buckets(self, msg, args):
+    def aws_s3buckets(self, msg, args):
         """
         Get a list of S3 buckets or the contents of a given one
         :param msg: msg sent
