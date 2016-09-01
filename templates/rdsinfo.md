@@ -2,11 +2,9 @@
 **{{error}}**
 {% else %}
 ### Statistics for RDS instance: {{rdsinfo.instance}}
-**Sample period**: {{rdsinfo.sampleperiod}}
-<table>
-	<tr><td>database</td><td>type</td><td>minmum</td><td>maximum</td><td>average</td></tr>
+**Sample period**: {{rdsinfo.sampleperiod}} minutes
+	|*database*|*type*|*minmum*|*maximum*|*average*|
 	{% for row in rdsinfo.data %}
-	<tr><td>{{row.database}}</td><td>{{row.type}}</td><td>{{row.Minimum}}</td><td>{{row.Maximum}}</td><td>{{row.Average}}</td></tr>
+	|{{row.database}}|{{row.type}}|{{row.Minimum}}|{{row.Maximum}}|{{row.Average}}|
 	{% endfor %}
-</table>
 {% endif %}
