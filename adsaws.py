@@ -294,7 +294,7 @@ def get_rds_info(mtype='connections', sampleperiod=30):
             d = res.get('Datapoints')[-1]
             d.update({'database': database, 'type': metrictype})
             info['data'].append(d)
-    return data
+    return info
     
 
 def get_ecs_info():
