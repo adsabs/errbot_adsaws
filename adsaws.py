@@ -62,7 +62,21 @@ class AdsAws(BotPlugin):
             data.append({'key': list(value.keys())[0], 'value': list(value.values())[0]})
 
         return {'title': args[0], 'data': data}
-
+    
+    @botcmd(template="rdsinfo")
+    def aws_rdsinfo(self, msg, args):
+        """
+        Get information on the production Postgres DB instance:
+        open connections and number of rollbacks per database
+        :param msg: msg sent
+        :param args: arguments passed
+        """
+        args = args.split(' ')
+        
+        data = get_rds_info()
+        
+        return {'rdsinfo': data}
+        
     def aws_ecsclusters(self, msg, args):
         """
         Get a list of ECS clusters with their ARN
@@ -241,6 +255,46 @@ def get_ec2_info(InstanceId):
     client = get_boto3_session().client('ec2')
     info = client.describe_instances(InstanceIds=[InstanceId])
     return info
+
+def get_rds_info(mtype='connections', sampleperiod=30):
+    # for now we allow either connections (default) OR rollbacks
+    if mtype not in ['connections', 'rollbacks']:
+        mtype = 'connections'
+    namespace = 'AdsAbsDatabase'
+    instance = 'adsabs-psql'
+    #
+    dimensions = [{'Name':'InstanceName', 'Value': instance}]
+    endtime = datetime.datetime.now()
+    starttime = datetime.datetime.now() - datetime.timedelta(minutes=sampleperiod)
+    # 
+    client = get_boto3_session().client('cloudwatch')
+    # Get the various metrics
+    result = client.list_metrics(Namespace=namespace)
+    if mtype in ['connections', 'rollbacks']:
+        metrics = [m.get('MetricName') for m in result.get('Metrics') if m.get('MetricName').lower().find(mtype) > 0]
+    else:
+        metrics = [m.get('MetricName') for m in result.get('Metrics')]
+    # For each of these metrics, gather data
+    info = {}
+    info.update({'namespace': namespace, 'instance': instance, 'sampleperiod': sampleperiod})
+    info['data'] = []
+    for metric in metrics:
+        database = metric.replace('Rollbacks','').replace('Connections','').lower()
+        metrictype = metric.lower().replace(database,'')
+        res = client.get_metric_statistics(Namespace=namespace, 
+        MetricName=metric, 
+        Dimensions=dimensions, 
+        StartTime=starttime, 
+        EndTime=endtime, 
+        Period=86400, 
+        Statistics=['SampleCount', 'Maximum', 'Minimum', 'Average'], 
+        Unit='Count')
+        if len(res.get('Datapoints', [])) > 0:
+            d = res.get('Datapoints')[-1]
+            d.update({'database': database, 'type': metrictype})
+            info['data'].append(d)
+    return data
+    
 
 def get_ecs_info():
     client = get_boto3_session().client('ecs')
