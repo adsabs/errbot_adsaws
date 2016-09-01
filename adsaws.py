@@ -63,7 +63,6 @@ class AdsAws(BotPlugin):
 
         return {'title': args[0], 'data': data}
 
-    @botcmd(template="ecsclusters")
     def aws_ecsclusters(self, msg, args):
         """
         Get a list of ECS clusters with their ARN
@@ -74,7 +73,6 @@ class AdsAws(BotPlugin):
             data.append({'name': entry.split('/')[1], 'ARN':entry})
         return {'data': data}
 
-    @botcmd(template="ecsclusterinfo")
     def aws_ecsclusterinfo(self, msg, args, test=False):
         """
         Get a list of properties for a given ECS cluster
@@ -101,7 +99,6 @@ class AdsAws(BotPlugin):
             
         return {'cluster': args[0], 'data': data}
 
-    @botcmd(template="ecsclusterstatus")
     def aws_ecsclusterstatus(self, msg, args, test=False):
         """
         Get status info for a given ECS cluster
@@ -142,7 +139,6 @@ class AdsAws(BotPlugin):
                      })
         return {'cluster': args[0], 'data': data}
 
-    @botcmd(template="ecsservicestatus")
     def aws_ecs(self, msg, args, test=False):
         """
         Get status info for a given service running on ECS
