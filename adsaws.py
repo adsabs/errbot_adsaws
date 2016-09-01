@@ -5,6 +5,7 @@ ADS AWS functions that collect the relevant information requested by the user
 import inspect
 import itertools
 import requests
+import datetime
 from core import get_boto3_session
 from errbot import BotPlugin, botcmd, arg_botcmd
 
