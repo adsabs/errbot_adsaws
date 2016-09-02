@@ -77,100 +77,22 @@ class AdsAws(BotPlugin):
         data = get_rds_info()
         
         return {'rdsinfo': data}
-        
-    def aws_ecsclusters(self, msg, args):
-        """
-        Get a list of ECS clusters with their ARN
-        """
-        cluster_info = get_ecs_info()
-        data = []
-        for entry in cluster_info.get('clusterArns'):
-            data.append({'name': entry.split('/')[1], 'ARN':entry})
-        return {'data': data}
 
-    def aws_ecsclusterinfo(self, msg, args, test=False):
+    @botcmd(template="microservice")
+    def aws_microservice(self, msg, args):
         """
-        Get a list of properties for a given ECS cluster
-        :param msg: msg sent
-        :param args: arguments passed
-        Return properties for a given ECS cluster
-        """
-        args = args.split(' ')
-        try:
-            cluster_info = get_ecs_details(*args)
-        except:
-            err_msg = 'Malformed request: !aws ecsclusterinfo <cluster name>'
-            return {'cluster': '', 'data': [], 'error':err_msg}
-        data = []
-        for entry in cluster_info.get('clusters'):
-            if entry['clusterName'] != args[0]:
-                continue
-            data.append({'status': entry['status'],
-                         'instance_num': entry['registeredContainerInstancesCount'],
-                         'running_num': entry['runningTasksCount'],
-                         'pending_num': entry['pendingTasksCount'],
-                         'active_num': entry['activeServicesCount']
-                     })
-            
-        return {'cluster': args[0], 'data': data}
-
-    def aws_ecsclusterstatus(self, msg, args, test=False):
-        """
-        Get status info for a given ECS cluster
-        :param msg: msg sent
-        :param args: arguments passed
-        Return properties for a given ECS clusters
-        """
-        args = args.split(' ')
-        try:
-            container_info = get_ecs_containers(*args)
-        except:
-            err_msg = 'Malformed request: !aws ecsclusterstatus <cluster name>'
-            return {'cluster': '', 'data': [], 'error':err_msg}
-        try:
-            services = get_ecs_services(*args)
-        except:
-            services = {}
-        data = []
-        for entry in container_info.get('containerInstances'):
-            id = entry['ec2InstanceId']
-            instance_services = services.get(id,[])
-            services_list = []
-            for srv in instance_services:
-                services_list.append("%s (%s, revision %s)" % (srv.get('service'),srv.get('lastStatus'), srv.get('revision')))
-            srv_str = ",".join(services_list)
-            info = get_ec2_info(id)
-            instance_type = info.get('Reservations')[0].get('Instances')[0].get('InstanceType')
-            ip_address = info.get('Reservations')[0].get('Instances')[0].get('PrivateIpAddress')
-            data.append({'container': entry['containerInstanceArn'],
-                         'ec2InstanceId': id,
-                         'status': entry['status'],
-                         'docker_version': entry['versionInfo']['dockerVersion'],
-                         'agent_version': entry['versionInfo']['agentVersion'],
-                         'agent_connected': entry['agentConnected'],
-                         'instance_type': instance_type,
-                         'private_ip': ip_address,
-                         'services': srv_str
-                     })
-        return {'cluster': args[0], 'data': data}
-
-    def aws_ecs(self, msg, args, test=False):
-        """
-        Get status info for a given service running on ECS
+        Get information for a specific microservice
         :param msg: msg sent
         :param args: arguments passed
         """
         args = args.split(' ')
         try:
-            service_info = get_ecs_service_status(*args)
+            production, staging = get_microservice_info(*args)
         except:
-            err_msg = 'Malformed request: !aws ecs <service> or !aws ecs list'
+            err_msg = 'Malformed request: !aws_microservice <service name>'
             return {'service': '', 'data': [], 'error':err_msg}
-
-        if args[0].strip() == 'list':
-            return {'services_list':",".join(SERVICES)}
-        data = get_ecs_service_status(*args)
-        return {'service':args[0], 'data':data}
+            
+        return {'service': args[0], 'production': production, 'staging': staging}
 
     @botcmd(template="s3buckets")
     def aws_s3buckets(self, msg, args):
@@ -296,111 +218,60 @@ def get_rds_info(mtype='connections', sampleperiod=30):
             info['data'].append(d)
     return info
     
-
-def get_ecs_info():
-    client = get_boto3_session().client('ecs')
-    result = client.list_clusters()
-    return result
-
-def get_ecs_details(name):
-    client = get_boto3_session().client('ecs')
-    result = client.describe_clusters(clusters=[name])
-    return result
-
-def get_ecs_containers(name):
-    client = get_boto3_session().client('ecs')
-    result = client.list_container_instances(cluster=name)
-    containers = result.get('containerInstanceArns',[])
-    container_info = client.describe_container_instances(cluster=name, containerInstances=containers)
-    return container_info
-
-def get_ecs_services(name):
-    client = get_boto3_session().client('ecs')
-    result = client.list_container_instances(cluster=name)
-    containers = result.get('containerInstanceArns',[])
-    services = {}
-    for container in containers:
-        cont_info = client.describe_container_instances(cluster=name, containerInstances=[container])
-        cont_id = cont_info.get('containerInstances',[])[0].get('ec2InstanceId','NA')
-        services[cont_id] = []
-        info = client.list_tasks(cluster=name, containerInstance=container)
-        tasks= info.get('taskArns',[])
-        for task in tasks:
-            task_info = client.describe_tasks(cluster=name, tasks=[task])
-            items = task_info.get('tasks',[])
-            data = {}
-            for item in items:
-                data['lastStatus'] = item.get('lastStatus','NA')
-                data['desiredStatus']= item.get('desiredStatus','NA')
-                data['service'] = item.get('containers','NA')[0].get('name','NA')
-                data['revision'] = item.get('taskDefinitionArn','NA').split(':')[-1]
-                services[cont_id].append(data)
-    return services
-
-def get_ecs_service_status(service_name):
-    service_map = {
-        'search':'solr-service'
-    }
-    serv = service_map.get(service_name, service_name)
-    ec2_client = get_boto3_session().client('ec2')
-    client = get_boto3_session().client('ecs')
-    result = client.list_clusters()
-    cnames = [e.split('/')[1] for e in result.get('clusterArns')]
-    results = []
-    for name in cnames:
-        data = {}
-        data['cluster'] = name
-        data['service_info'] = {}
-        containers = client.list_container_instances(cluster=name).get('containerInstanceArns',[])
-        tasks = list(itertools.chain(*[client.list_tasks(cluster=name, containerInstance=c).get('taskArns',[]) for c in containers]))
+def get_microservice_info(service):
+    # We want to keep standard nomenclature in the results
+    env2appname = {
+            'production':'eb-deploy',
+            'staging':'sandbox'
+        }
+    appname2env = {v: k for k, v in env2appname.items()}
+    # AWS calls the services "apps"
+    appname = env2appname.get(env,'metrics')
+    # The clients to talk to both Elastic Beanstalk and EC2
+    client = get_boto3_session().client('elasticbeanstalk')
+    ec2 = get_boto3_session().client('ec2')
+    # Gather data for all our instances on EC2
+    instances = []
+    for reservation in ec2.describe_instances()['Reservations']:
+        for instance in reservation['Instances']:
+            idata = {
+                'tag': [i.get('Value') for i in instance['Tags'] if i['Key'] == 'Name'][0],
+                'status': instance['State']['Name'],
+                'type': instance['InstanceType'],
+                'ip': instance.get('PrivateIpAddress','NA')
+            }
+            instances.append(idata)
+    # What environments do we have?
+    result = client.describe_environments(IncludeDeleted=False)
+    environments = result.get('Environments',[])
+    # Filter them for the service we want
+    environments = [e for e in environments if e['VersionLabel'].find(service) > -1]
+    # Now we can start compiling the information we want to display
+    data = []
+    for entry in environments:
+        d = {}
+        version = entry['VersionLabel'].split(':')
+        d['service'] = version[0]
+        d['environment'] = entry['ApplicationName']
+        d['environment_type'] = appname2env.get(entry['ApplicationName'],'NA')
+        d['service_version'] = version[1]
+        d['deploy_version'] = version[2]
+        d['date_updated'] = entry['DateUpdated'].isoformat()
+        d['instance_name'] = entry['EnvironmentName']
+        d['health'] = entry['HealthStatus']
         try:
-            serv_tasks = [e for e in client.describe_tasks(cluster=name, tasks=tasks).get('tasks',[]) if serv in e.get('taskDefinitionArn','NA')]
-            testURL, httpStatus = get_http_status(name, service_name)
+          insdata = [i for i in instances if i['tag'] == entry['EnvironmentName']][0]
+          d['ip_address'] = insdata['ip']
+          d['status'] = insdata['status']
+          d['instance_type'] = insdata['type']
         except:
-            serv_tasks = []
-            httpStatus = 'NA'
-            testURL = 'NA'
-        for item in serv_tasks:
-            item.pop("overrides", None)
-            ARN = item['containerInstanceArn']
-            cont_info = client.describe_container_instances(cluster=name, containerInstances=[ARN])
-            cont_id = cont_info.get('containerInstances',[])[0].get('ec2InstanceId','NA')
-            instance_info = get_ec2_info(cont_id)
-            interfaces = []
-            for R in instance_info['Reservations']:
-                for I in R['Instances']:
-                    interfaces.append("(%s, %s)" % (I.get('PrivateIpAddress',"NA"), I.get('InstanceType',"NA")))
-            try:
-                info = client.describe_task_definition(taskDefinition=item.get('taskDefinitionArn')).get('taskDefinition')
-            except:
-                info = {}
-            info['interfaces'] = ",".join(interfaces)
-            item['taskDefinition'] = info
-#            item['instanceInfo'] = instance_info
-#            item['interfaces'] = ",".join(interfaces)
-        data['service_info']['serviceTasks'] = serv_tasks
-        data['service_info']['testURL'] = testURL
-        data['service_info']['httpStatus'] = str(httpStatus)
-        results.append(data)
-    return results
-
-def get_http_status(cluster, service):
-    resp = requests.get("%s/resources"%API_URL[cluster])
-    base = resp.json()['adsws.api']['base']
-    tokenURL = "%s%s/accounts/bootstrap" % (API_URL[cluster], base)
-    resp = requests.get(tokenURL)
-    token = resp.json()['access_token']
-    headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'Authorization':'Bearer %s' % token}
-    serviceURL = "%s%s/%s/resources" % (API_URL[cluster], base, service)
-    resp = requests.get(serviceURL, headers=headers)
-    return (resp.url, resp.status_code)
-
-def get_endpoints(cluster):
-    exclude = [u'status', u'oauth', u'protected', u'user', u'vault']
-    resp = requests.get("%s/resources"%API_URL[cluster])
-    endpoints = list(set([e.split('/')[1] for e in resp.json()['adsws.api']['endpoints']]))
-    endpoints = [e for e in endpoints if e not in exclude]
-    return endpoints
+          d['ip_address'] = 'NA'
+          d['status'] = 'NA'
+          d['instance_type'] = 'NA'
+        data.append(d)
+    pdata = [d for d in data if d['environment_type'] == 'production']
+    sdata = [d for d in data if d['environment_type'] == 'staging']
+    return pdata, sdata
 
 def get_s3_buckets():
     s3 = get_boto3_session().client('s3')
