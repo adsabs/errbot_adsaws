@@ -8,6 +8,11 @@ import requests
 import datetime
 from core import get_boto3_session
 from errbot import BotPlugin, botcmd, arg_botcmd
+import os
+import time
+
+os.environ['TZ'] = 'America/New_York'
+time.tzset()
 
 API_URL = {
     'staging':'http://ecs-staging-elb-2044121877.us-east-1.elb.amazonaws.com',
@@ -220,13 +225,10 @@ def get_rds_info(mtype='connections', sampleperiod=30):
     
 def get_microservice_info(service):
     # We want to keep standard nomenclature in the results
-    env2appname = {
-            'production':'eb-deploy',
-            'staging':'sandbox'
+    appname2env = {
+            'eb-deploy':'production',
+            'sandbox':'staging'
         }
-    appname2env = {v: k for k, v in env2appname.items()}
-    # AWS calls the services "apps"
-    appname = env2appname.get(env,'metrics')
     # The clients to talk to both Elastic Beanstalk and EC2
     client = get_boto3_session().client('elasticbeanstalk')
     ec2 = get_boto3_session().client('ec2')

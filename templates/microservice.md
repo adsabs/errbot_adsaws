@@ -2,7 +2,7 @@
 **{{error}}**
 {% else %}
 #### Info for: {{service}}
-**Environment**: Production
+#### Environment: Production
 {% for item in production %}
 **Service version**: {{item.service_version}}
 
@@ -19,8 +19,11 @@
 **Instance type**: {{item.instance_type}}
 
 **Instance name**: {{item.instance_name}}
+{% endfor %}
 
-**Environment**: Staging
+----
+
+#### Environment: Staging
 {% for item in staging %}
 **Service version**: {{item.service_version}}
 
@@ -37,6 +40,6 @@
 **Instance type**: {{item.instance_type}}
 
 **Instance name**: {{item.instance_name}}
-  -----
+
 {% endfor %}
 {% endif %}
