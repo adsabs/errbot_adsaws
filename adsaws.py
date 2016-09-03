@@ -190,7 +190,7 @@ def get_ec2_info(InstanceId):
 def get_rds_info(mtype):
     sampleperiod=30
     # for now we allow either connections (default) OR rollbacks
-    if not mptye or mtype not in ['connections', 'rollbacks']:
+    if not mtype or mtype not in ['connections', 'rollbacks']:
         mtype = 'connections'
     namespace = 'AdsAbsDatabase'
     instance = 'adsabs-psql'
