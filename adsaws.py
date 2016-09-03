@@ -78,8 +78,11 @@ class AdsAws(BotPlugin):
         :param args: arguments passed
         """
         args = args.split(' ')
-        
-        data = get_rds_info()
+        try:
+            data = get_rds_info(*args)
+        except:
+            err_msg = 'Malformed request: !aws_rdsinfo <connections|rollbacks> (connections is default)'
+            return {'service': '', 'data': [], 'error':err_msg}
         
         return {'rdsinfo': data}
 
@@ -184,9 +187,10 @@ def get_ec2_info(InstanceId):
     info = client.describe_instances(InstanceIds=[InstanceId])
     return info
 
-def get_rds_info(mtype='connections', sampleperiod=30):
+def get_rds_info(mtype):
+    sampleperiod=30
     # for now we allow either connections (default) OR rollbacks
-    if mtype not in ['connections', 'rollbacks']:
+    if not mptye or mtype not in ['connections', 'rollbacks']:
         mtype = 'connections'
     namespace = 'AdsAbsDatabase'
     instance = 'adsabs-psql'
