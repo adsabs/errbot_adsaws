@@ -223,6 +223,7 @@ def get_rds_info(mtype):
         Unit='Count')
         if len(res.get('Datapoints', [])) > 0:
             d = res.get('Datapoints')[-1]
+            d['Average'] = round(d['Average'],1)
             d.update({'database': database, 'type': metrictype})
             info['data'].append(d)
     return info
