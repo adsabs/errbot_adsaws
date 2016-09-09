@@ -241,13 +241,16 @@ def get_microservice_info(service):
     instances = []
     for reservation in ec2.describe_instances()['Reservations']:
         for instance in reservation['Instances']:
-            idata = {
-                'tag': [i.get('Value') for i in instance['Tags'] if i['Key'] == 'Name'][0],
-                'status': instance['State']['Name'],
-                'type': instance['InstanceType'],
-                'ip': instance.get('PrivateIpAddress','NA')
-            }
-            instances.append(idata)
+            try:
+                idata = {
+                    'tag': [i.get('Value') for i in instance['Tags'] if i['Key'] == 'Name'][0],
+                    'status': instance['State']['Name'],
+                    'type': instance['InstanceType'],
+                    'ip': instance.get('PrivateIpAddress','NA')
+                }
+                instances.append(idata)
+            except:
+                pass
     # What environments do we have?
     result = client.describe_environments(IncludeDeleted=False)
     environments = result.get('Environments',[])
