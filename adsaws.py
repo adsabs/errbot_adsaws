@@ -6,6 +6,8 @@ import inspect
 import itertools
 import requests
 import datetime
+from collections import defaultdict
+import adsaws_config
 from core import get_boto3_session
 from errbot import BotPlugin, botcmd, arg_botcmd
 import os
@@ -14,11 +16,29 @@ import time
 os.environ['TZ'] = 'America/New_York'
 time.tzset()
 
+requests.packages.urllib3.disable_warnings()
+
+# Bumblebee API info
 API_URL = {
     'staging':'http://ecs-staging-elb-2044121877.us-east-1.elb.amazonaws.com',
     'production':'https://api.adsabs.harvard.edu'
 }
-
+queryURL = "%s/v1/search/query" % API_URL['production']
+headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'Authorization':'Bearer %s' % adsaws_config.API_KEY}
+# ADS Classic info
+try:
+    bibgrpdirs = [d for d in os.listdir(adsaws_config.DATA_DIR) if d.find('bibgroup') > -1]
+except:
+    bibgrpdirs = []
+bibgrp2dir = {}
+for b in bibgrpdirs:
+    bibname = "%s/%s/NAME"%(adsaws_config.DATA_DIR,b)
+    if not os.path.exists(bibname):
+        continue
+    bibgrp = open(bibname).read().strip()
+    bibgrp2dir[bibgrp] = bibname.replace('/NAME','')
+refcodes = '%s/refereed/all.links' % adsaws_config.DATA_DIR
+# Microservices info
 SERVICES = ['metrics', 'graphics', 'recommender', 'orcid', 'biblib']
 
 class AdsAws(BotPlugin):
@@ -292,6 +312,86 @@ def get_s3_bucket_contents(bucket):
     s3 = get_boto3_session().client('s3')
     resp = s3.list_objects(Bucket=bucket)
     return resp['Contents']
+
+def check_bibliography(bibgroup, reftype):
+    params = {'facet':'true',
+                  'facet.limit':'-1',
+                  'facet.pivot':'property,year',
+                  'q':'bibgroup:%s'%bibgroup,
+                  'sort':'date desc'}
+
+    r = requests.get(queryURL, params=params, headers=headers)
+    data = r.json()
+    try:
+        pivot = [d for d in data['facet_counts']['facet_pivot']['property,year'] if d['value'] == reftype][0]['pivot']
+        BBBhist = dict([(int(p['value']), p['count']) for p in pivot])
+    except:
+        BBBhist = {2016: 0}
+    minyear = min(BBBhist.keys())
+    maxyear = max(BBBhist.keys())
+    # Get the refereed bibcodes for the bibgroup
+    cls_bibs = get_Classic_bibcodes(bibgroup, reftype)
+    
+    years = [int(b[:4]) for b in cls_bibs if len(b) > 0]
+    CLShist = defaultdict(int)
+    for y in years:
+        CLShist[y] += 1
+    results = [(y, BBBhist.get(y,0), CLShist.get(y,0)) for y in range(minyear, maxyear+1) if BBBhist.get(y,0) != CLShist.get(y,0)]
+    return cls_bibs, results
+
+def get_bibgroup_discrepancies(bibgroup, reftype):
+    CLSbibs, discrepancies = check_bibliography(bibgroup, reftype)
+    
+def get_Classic_bibcodes(bibgroup, reftype, year=None):
+    bibgroup_class_bibs = bibgrp2dir.get(bibgroup, None)
+    if not bibgroup_class_bibs:
+        return []
+    bibcodes = []
+    bibgroup_lnks = "%s/all.links" % bibgroup_class_bibs
+    with open(bibgroup_lnks) as fh:
+        for line in fh:
+            if year and line.strip()[:4] == year:
+                bibcodes.append(line.strip())
+            else:
+                if not year:
+                    bibcodes.append(line.strip())
+
+    ref_bibs = []
+    with open(refcodes) as f:
+        for line in f:
+            if year and line.strip()[:4] == year:
+                ref_bibs.append(line.strip())
+            else:
+                if not year:
+                    ref_bibs.append(line.strip())
+
+    bibcodes_ref = set(ref_bibs) & set(bibcodes)
+    bibcodes_notref = set(bibcodes) - bibcodes_ref
+
+    if reftype == 'refereed':
+        return list(bibcodes_ref)
+    else:
+        return list(bibcodes_notref)
+
+def get_BBB_bibcodes(bibgroup, reftype, year=None):
+    # Get bibcodes for a given bibgroup
+    #  reftype: refereed / notrefereed
+    if year:
+        params = {'q':'bibgroup:%s property:%s year:%s' % (bibgroup, reftype, year)}
+    else:
+        params = {'q':'bibgroup:%s property:%s' % (bibgroup, reftype)}
+
+    params['fl'] = 'bibcode'
+    params['rows'] = 2000
+
+    r = requests.get(queryURL, params=params, headers=headers)
+    data = r.json()
+    try:
+        bibcodes = [r['bibcode'] for r in data['response']['docs']]
+    except:
+        bibcodes = []
+
+    return bibcodes
 
 def methodsWithDecorator(cls, decoratorName):
     sourcelines = inspect.getsourcelines(cls)[0]
