@@ -16,8 +16,6 @@ import time
 os.environ['TZ'] = 'America/New_York'
 time.tzset()
 
-requests.packages.urllib3.disable_warnings()
-
 # Bumblebee API info
 API_URL = {
     'staging':'http://ecs-staging-elb-2044121877.us-east-1.elb.amazonaws.com',
@@ -140,6 +138,24 @@ class AdsAws(BotPlugin):
         except:
             err_msg = 'Malformed request: !aws s3 <bucket name> or !aws s3 list'
             return {'service': '', 'data': [], 'error':err_msg}
+    
+    @botcmd(template="bibgroup")
+    def check_bibgroup(self, msg, args):
+        """
+        For a given bibgroup, compare contents in Bumblebee versus Classic
+        :param msg: msg sent
+        :param args: arguments passed
+        """
+        args = args.split(' ')
+        try:
+            refereeed, notrefereed = get_bibgroup_discrepancies(*args)
+        except:
+            err_msg = 'Malformed request: !check_bibgroup <bibgroup> <refereed|notrefereed> (default: both)'
+            return {'bibgroup': '', 'data': [], 'error':err_msg}
+        if 'error' in results:
+            return {'bibgroup': '', 'data': [], 'error':results['error']}
+            
+        return {'bibgroup': args[0], 'refereed': refereed, 'notrefereed': notrefereed}
 
 def get_ec2_running():
     """
@@ -336,11 +352,18 @@ def check_bibliography(bibgroup, reftype):
     CLShist = defaultdict(int)
     for y in years:
         CLShist[y] += 1
-    results = [(y, BBBhist.get(y,0), CLShist.get(y,0)) for y in range(minyear, maxyear+1) if BBBhist.get(y,0) != CLShist.get(y,0)]
+    results = [{'year':y, 'bumblebee':BBBhist.get(y,0), 'classic':CLShist.get(y,0)} for y in range(minyear, maxyear+1) if BBBhist.get(y,0) != CLShist.get(y,0)]
     return cls_bibs, results
 
-def get_bibgroup_discrepancies(bibgroup, reftype):
-    CLSbibs, discrepancies = check_bibliography(bibgroup, reftype)
+def get_bibgroup_discrepancies(bibgroup):
+    results = {}
+    if bibgroup not in bibgrp2dir:
+        return {'error':'unable to find data for bibgroup "%s"'%bibgroup}
+    
+    bibs, rf_discr = check_bibliography(bibgroup, 'refereed')
+    bibs, nr_discr = check_bibliography(bibgroup, 'notrefereed')
+    
+    return rf_discr, nr_discr
     
 def get_Classic_bibcodes(bibgroup, reftype, year=None):
     bibgroup_class_bibs = bibgrp2dir.get(bibgroup, None)
