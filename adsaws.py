@@ -153,9 +153,29 @@ class AdsAws(BotPlugin):
             err_msg = 'Malformed request: !check_bibgroup <bibgroup> <refereed|notrefereed> (default: both)'
             return {'bibgroup': '', 'data': [], 'error':err_msg}
         if 'error' in refereed:
-            return {'bibgroup': '', 'data': [], 'error':results['error']}
+            return {'bibgroup': '', 'data': [], 'error':refereed['error']}
             
         return {'bibgroup': args[0], 'refereed': refereed, 'notrefereed': notrefereed}
+    
+    @botcmd(template="missingrecords")
+    def show_missing_records(self, msg, args):
+        """
+        For a given bibgroup, show the bibcodes of the missing records for a given year and refereed status
+        :param msg: msg sent
+        :param args: arguments passed
+        """
+        args = args.split(' ')
+        if len(args) != 3:
+            err_msg = 'Malformed request: !show_missing_records <bibgroup> <year> <refereed status>'
+            return {'title': '', 'data': [], 'error':err_msg}
+        try:
+            bbb_missing, cls_missing = get_missing_records(*args)
+        except:
+            err_msg = 'Malformed request: !show_missing_records <bibgroup> <year> <refereed status>'
+            return {'bibgroup': '', 'data': [], 'error':err_msg}
+        if 'error' in bibcodes:
+            return {'bibgroup': '', 'data': [], 'error':bibcodes['error']}
+        return {'bibgroup': args[0], 'year': args[1], 'reftype': args[2], 'bumblebee': bbb_missing, 'classic': cls_missing}
 
 def get_ec2_running():
     """
@@ -365,6 +385,15 @@ def get_bibgroup_discrepancies(bibgroup):
     
     return rf_discr, nr_discr
     
+def show_missing_records(bibgroup, year, reftype):
+    if bibgroup not in bibgrp2dir:
+        return {'error':'unable to find data for bibgroup "%s"'%bibgroup}, []
+    
+    cls_bibs, discr =  check_bibliography(bibgroup, reftype)
+    bbb_bibs = get_BBB_bibcodes(bibgroup, reftype, year)
+    cls_bibs = [b for b in cls_bibs if b[:4] == year]
+    return list(set(cls_bibs)-set(bbb_bibs)), list(set(bbb_bibs)-set(cls_bibs))
+
 def get_Classic_bibcodes(bibgroup, reftype, year=None):
     bibgroup_class_bibs = bibgrp2dir.get(bibgroup, None)
     if not bibgroup_class_bibs:
