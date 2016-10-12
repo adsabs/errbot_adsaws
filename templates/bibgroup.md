@@ -5,7 +5,7 @@
 #### Refereed Publications
 Year Bumblebee Classic
 {% for item in refereed %}
-item.year item.bumblebee item.classic
+{{item.year}} {{item.bumblebee}} {{item.classic}}
 {% endfor %}
 
 ----
@@ -13,6 +13,6 @@ item.year item.bumblebee item.classic
 #### Non-Refereed Publications
 Year Bumblebee Classic
 {% for item in notrefereed %}
-item.year item.bumblebee item.classic
+{item.year}} {{item.bumblebee}} {{item.classic}}
 {% endfor %}
 {% endif %}
