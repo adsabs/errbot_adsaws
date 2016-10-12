@@ -148,7 +148,7 @@ class AdsAws(BotPlugin):
         """
         args = args.split(' ')
         try:
-            refereeed, notrefereed = get_bibgroup_discrepancies(*args)
+            refereed, notrefereed = get_bibgroup_discrepancies(*args)
         except:
             err_msg = 'Malformed request: !check_bibgroup <bibgroup> <refereed|notrefereed> (default: both)'
             return {'bibgroup': '', 'data': [], 'error':err_msg}
