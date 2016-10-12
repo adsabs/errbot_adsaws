@@ -26,7 +26,10 @@ API_URL = {
 queryURL = "%s/v1/search/query" % API_URL['production']
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'Authorization':'Bearer %s' % adsaws_config.API_KEY}
 # ADS Classic info
-bibgrpdirs = [d for d in os.listdir(adsaws_config.DATA_DIR) if d.find('bibgroup') > -1]
+try:
+    bibgrpdirs = [d for d in os.listdir(adsaws_config.DATA_DIR) if d.find('bibgroup') > -1]
+except:
+    bibgrpdirs = []
 bibgrp2dir = {}
 for b in bibgrpdirs:
     bibname = "%s/%s/NAME"%(adsaws_config.DATA_DIR,b)
@@ -336,6 +339,9 @@ def check_bibliography(bibgroup, reftype):
     results = [(y, BBBhist.get(y,0), CLShist.get(y,0)) for y in range(minyear, maxyear+1) if BBBhist.get(y,0) != CLShist.get(y,0)]
     return cls_bibs, results
 
+def get_bibgroup_discrepancies(bibgroup, reftype):
+    CLSbibs, discrepancies = check_bibliography(bibgroup, reftype)
+    
 def get_Classic_bibcodes(bibgroup, reftype, year=None):
     bibgroup_class_bibs = bibgrp2dir.get(bibgroup, None)
     if not bibgroup_class_bibs:
