@@ -166,16 +166,16 @@ class AdsAws(BotPlugin):
         """
         args = args.split(' ')
         if len(args) != 3:
-            err_msg = 'Malformed request: !show_missing_records <bibgroup> <year> <refereed status>'
+            err_msg = 'Malformed request: !show_missing_records <bibgroup> <year> <refereed status>\nReceived just %s arguments: %s' % (len(args), " ".join(args))
             return {'title': '', 'data': [], 'error':err_msg}
         try:
             bbb_missing, cls_missing = get_missing_records(*args)
         except:
-            err_msg = 'Malformed request: !show_missing_records <bibgroup> <year> <refereed status>'
+            err_msg = 'Request failed'
             return {'bibgroup': '', 'data': [], 'error':err_msg}
-        if 'error' in bibcodes:
-            return {'bibgroup': '', 'data': [], 'error':bibcodes['error']}
-        return {'bibgroup': args[0], 'year': args[1], 'reftype': args[2], 'bumblebee': bbb_missing, 'classic': cls_missing}
+        if 'error' in bbb_missing:
+            return {'bibgroup': '', 'data': [], 'error':bbb_missing['error']}
+        return {'bibgroup': args[0], 'year': args[1], 'reftype': args[2], 'classic': bbb_missing, 'bumblebee': cls_missing}
 
 def get_ec2_running():
     """
@@ -385,7 +385,7 @@ def get_bibgroup_discrepancies(bibgroup):
     
     return rf_discr, nr_discr
     
-def show_missing_records(bibgroup, year, reftype):
+def get_missing_records(bibgroup, year, reftype):
     if bibgroup not in bibgrp2dir:
         return {'error':'unable to find data for bibgroup "%s"'%bibgroup}, []
     
