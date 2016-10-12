@@ -13,6 +13,6 @@ Year Bumblebee Classic
 #### Non-Refereed Publications
 Year Bumblebee Classic
 {% for item in notrefereed %}
-{item.year}} {{item.bumblebee}} {{item.classic}}
+{{item.year}} {{item.bumblebee}} {{item.classic}}
 {% endfor %}
 {% endif %}
