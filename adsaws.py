@@ -152,7 +152,7 @@ class AdsAws(BotPlugin):
         except:
             err_msg = 'Malformed request: !check_bibgroup <bibgroup> <refereed|notrefereed> (default: both)'
             return {'bibgroup': '', 'data': [], 'error':err_msg}
-        if 'error' in results:
+        if 'error' in refereed:
             return {'bibgroup': '', 'data': [], 'error':results['error']}
             
         return {'bibgroup': args[0], 'refereed': refereed, 'notrefereed': notrefereed}
@@ -358,7 +358,7 @@ def check_bibliography(bibgroup, reftype):
 def get_bibgroup_discrepancies(bibgroup):
     results = {}
     if bibgroup not in bibgrp2dir:
-        return {'error':'unable to find data for bibgroup "%s"'%bibgroup}
+        return {'error':'unable to find data for bibgroup "%s"'%bibgroup}, []
     
     bibs, rf_discr = check_bibliography(bibgroup, 'refereed')
     bibs, nr_discr = check_bibliography(bibgroup, 'notrefereed')
